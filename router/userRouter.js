@@ -9,5 +9,5 @@ router.delete('/deleteusers/:id',controller.deleteuser);
 router.post('/user/:userId/borrowBook/:bookId',controller.borrowBook);
 router.post('/user/:userId/returnBook/:bookId',controller.returnBook);
 router.post('/login',controller.loginuser);
-
+router.get('/allUser',authenticationtoken, controller.getuser);
 module.exports=router;

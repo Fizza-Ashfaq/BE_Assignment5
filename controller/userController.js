@@ -1,6 +1,7 @@
 const user=require('../model/userModel');
 const bcrypt = require('bcryptjs');
 const JWT =require("jsonwebtoken");
+const secret_key = "Secret key";
 const loginuser=async(req,res)=>
 {
     try{
@@ -46,8 +47,14 @@ const adduser=async(req,res)=>{
 }
 const getuser = async(req, res)=>{
     try{
-        const data=await user.find({});
-        res.status(200).send(data);
+
+        console.log("request from postman", req.headers.authorization);
+        const token=req.headers.authorization.split(' ')[1];
+        const validatedtoken= await JWT.verify(token, );
+        console.log("token",token);
+        console.log("token",validatedtoken);
+        const users = await User.find();  
+        res.json({ "message": "Users fetched successfully", users });
     }
     catch(error){
         console.error(error);
