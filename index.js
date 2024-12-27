@@ -17,3 +17,9 @@ app.listen(port,()=>
 {
     console.log("server listening on port " + port);
 });
+
+// {
+//     "email":"alia123@gmail.com",
+//     "password":"alia123",
+//     "new_password":"alia12345"
+// }

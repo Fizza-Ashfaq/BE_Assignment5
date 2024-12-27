@@ -1,13 +1,38 @@
 const user=require('../model/userModel');
 const bcrypt = require('bcryptjs');
-
-
+const dotenv = require('dotenv');
+dotenv.config({path: './mongoose.env'});
+const jwt=require('jsonwebtoken');
+const updatepass=async(req,res)=>
+{
+    try{
+        const users=await user.findOne({email: req.body.email});
+        const validate=await bcrypt.compare(users.password, req.body.password);
+        if(validate)
+        {
+            const salt=10;
+            const newPassword=await bcrypt.hash(req.body.new_password,salt);
+            users.password = newPassword;
+            await users.save();
+            console.log('Password updated successfully');
+            res.status(200).send({message:"Password updated successfully"});
+        }
+        else{
+            console.log('Invalid credentials');
+            res.status(401).send("Invalid credentials");
+        }
+    }
+    catch(err)
+    {
+        res.status(500).send({message:"internal error"});
+    }
+}
 const loginuser=async(req,res)=>
 {
     try{
-        const data=await user.findById(req.body._id);
+        const data=await user.findOne({email:req.body.email});
         console.log(data);
-        if(!user){
+        if(!data){
             return res.status(404).send({ error: "User not found" });
         }
         else{
@@ -15,7 +40,7 @@ const loginuser=async(req,res)=>
             const validate=await bcrypt.compare(req.body.password,data.password);
             if(validate)
             {
-                const token=JWT.sign(data._id.toString(),'secret_key',)
+                const token=jwt.sign(data._id.toString(),'secret_key',)
                 console.log('Login Successful');
                 res.status(200).send({message:"Login successful",token});
             }
@@ -47,13 +72,12 @@ const adduser=async(req,res)=>{
 }
 const getuser = async(req, res)=>{
     try{
-
-        console.log("request from postman", req.headers.authorization);
-        const token=req.headers.authorization.split(' ')[1];
-        const validatedtoken= await JWT.verify(token, process.env.JWT_key);
-        console.log("token",token);
-        console.log("token",validatedtoken);
-        const users = await User.find();  
+        console.log(req.user);
+        const userss=await user.findById(req.user.id);
+        if(userss.role!=="admin"){
+            return res.status(403).send({ error: "You are not authorized to access this resource" });
+        }
+        const users = await user.find();  
         res.json({ "message": "Users fetched successfully", users });
     }
     catch(error){
@@ -65,6 +89,10 @@ const getoneuser = async(req, res)=>{
     try{
         const id=req.params.id;
         // const book=await Book.findById(id);
+        const userss=await user.findById(req.user.id);
+        if(userss.role!="admin"){
+            return res.status(403).send({ error: "You are not authorized to access this resource" });
+        }
         const obj=await user.findById(id).populate('books');
         res.status(200).send(obj);
     }
@@ -77,6 +105,11 @@ const getoneuser = async(req, res)=>{
 const updateuser=async(req,res)=>{
     try{
         const id=req.params.id;
+        const userss = await user.findById(req.user.id);
+        if(userss.role != 'user')
+            {
+                return res.status(403).send({ error: "You are not authorized to access this resource" });
+            }
         const data=req.body;
         const obj=await user.findByIdAndUpdate(id,data,{new:true});
         res.status(200).send(obj);
@@ -90,6 +123,10 @@ const updateuser=async(req,res)=>{
 const deleteuser=async(req,res)=>{
     try{
         const id=req.params.id;
+        const userss = await user.findById(req.user.id);
+        if(userss.role=="admin"){
+            return res.status(403).send({ error: "You are not authorized to access this resource" });
+        }
         const obj=await user.findByIdAndDelete(id);
         res.status(200).send(obj);
     }
@@ -102,6 +139,10 @@ const deleteuser=async(req,res)=>{
 const borrowBook=async(req,res)=>{
     const {userId,bookId}=req.params;
     const User=await user.findById(userId);
+    if(userss.role != 'user')
+        {
+            return res.status(403).send({ error: "You are not authorized to access this resource" });
+        }
     try{
     if(User){
 
@@ -129,6 +170,11 @@ const borrowBook=async(req,res)=>{
 const returnBook = async(req, res) => {
     try{
     const { userId,bookId } = req.params;
+    const userss = await user.findById(req.user.id);
+    if(userss.role != 'user')
+    {
+        return res.status(403).send({ error: "You are not authorized to access this resource" });
+    }
     const User = await user.findById(userId);
     if(!User)
     {
@@ -159,5 +205,6 @@ module.exports={
     getoneuser,
     updateuser,
     deleteuser,
-    loginuser
+    loginuser,
+    updatepass
 }
