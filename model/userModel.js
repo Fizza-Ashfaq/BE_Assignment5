@@ -15,8 +15,8 @@ const userSchema=new Schema({
         type:Schema.Types.ObjectId,
         ref:"Book",
         required:false
-    }]
-
+    }],
+    OTP:{type:Number, required:false}
 }); 
 
 const user=mongoose.model('User',userSchema);
